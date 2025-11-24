@@ -93,6 +93,14 @@ class Board:
 class Player:
     def __init__(self, marker):
         self.marker = marker
+        self._score = 0
+
+    @property
+    def score(self):
+        return self._score
+
+    def increment_score(self):
+        self._score += 1
 
     @property
     def marker(self):
@@ -101,6 +109,9 @@ class Player:
     @marker.setter
     def marker(self, marker):
         self._marker = marker
+
+    # def __str__(self):
+    #     return self.__class__.__name__
 
 class Human(Player):
     def __init__(self):
@@ -122,22 +133,24 @@ class TTTGame:
         (3, 5, 7),  # diagonal: top-right to bottom-left
     )
 
-    def __init__(self, first_player):
+    def __init__(self, first_player='human'):
         self.board = Board()
         self.human = Human()
         self.computer = Computer()
-        self.computer_wins_count = 0
-        self.human_wins_count = 0
-        self.first_player = first_player
+        # self.computer_wins_count = 0
+        # self.human_wins_count = 0
+        self.first_player = self.human if first_player == 'human' else self.computer
 
 
     def play(self):
         self.display_welcome_message()
         while True:
             self.play_one_game()
-            print(f"Total human wins - {self.human_wins_count}")
-            print(f"Total computer wins - {self.computer_wins_count}") 
-            if self.computer_wins_count >= 3 or self.human_wins_count >= 3:
+            human_wins_count = self.human.score
+            computer_wins_count = self.computer.score
+            print(f"Total human wins - {human_wins_count}")
+            print(f"Total computer wins - {computer_wins_count}") 
+            if computer_wins_count >= 3 or human_wins_count >= 3:
                 break
             if not self.play_again():
                 break
@@ -162,16 +175,13 @@ class TTTGame:
         self.display_results()
 
     def player_moves(self, current_player):
-        if current_player == 'human':
+        if current_player == self.human:
             self.human_moves()
-        elif current_player == 'computer':
+        elif current_player == self.computer:
             self.computer_moves()
 
     def toggle_player(self, current_player):
-        if current_player == "human":
-            return "computer"
-        elif current_player == "computer":
-            return "human"
+        return self.computer if current_player == self.human else self.human
     
     def display_welcome_message(self):
         print("Welcome to Tic Tac Toe!")
@@ -181,10 +191,10 @@ class TTTGame:
 
     def display_results(self):
         if self.is_winner(self.human):
-            self.human_wins_count += 1
+            self.human.increment_score()
             print("You won! Congratulations!")
         elif self.is_winner(self.computer):
-            self.computer_wins_count += 1
+            self.computer.increment_score()
             print("I won! I won! Take that, human!")
         else:
             print("A tie game. How boring.")
@@ -255,12 +265,12 @@ class TTTGame:
         winning_row = self.get_row("offensive")
         valid_choices = self.board.unused_squares()
 
-        if 5 in valid_choices:
-            choice = 5
-        elif winning_row:
+        if winning_row:
             choice = self.board.get_square(winning_row)
         elif threatened_row:
             choice = self.board.get_square(threatened_row)
+        elif 5 in valid_choices:
+            choice = 5
         else:
             choice = random.choice(valid_choices)
         
