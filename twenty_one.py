@@ -50,9 +50,12 @@ class Participant:
     def score(self):
         total = sum(card.points for card in self.hand)
         count_aces = self.count_aces()
-        if count_aces:
-            return total - count_aces * 10
-
+        
+        # Adjust aces from 11 to 1 only when necessary
+        while total > 21 and count_aces > 0:
+            total -= 10
+            count_aces -= 1
+        
         return total
 
     def count_aces(self):
@@ -65,14 +68,30 @@ class Participant:
         print(f"Total points is {self.score()}")
 
     def display_cards(self):
-        print(f"{self.intro} {[f"{card}" for card in self.hand]}")                
+        print(f"{self.intro} {[f"{card}" for card in self.hand]}")
+
+    def add_card(self, card):
+        self.hand.append(card)
+
+    def reset_hand(self):
+        self.hand  = []               
 
 class Player(Participant):
+    INITIAL_BALANCE = 5 # Player has $5 initially to bet
+    WINNING_BALANCE = 10
+
     def __init__(self):
         super().__init__()
         self.intro = "Your card is:"
-        self.balance = 5 # Player has $5 initially to bet
-        
+        self.balance = Player.INITIAL_BALANCE
+
+    def is_broke(self):
+        return self.balance <= 0
+
+    def is_rich(self):
+        return self.balance >= Player.WINNING_BALANCE
+
+
 
 class Dealer(Participant):
     def __init__(self):
@@ -85,9 +104,6 @@ class Dealer(Participant):
 
 class TwentyOneGame:
     def __init__(self):
-        # STUB
-        # What attributes does the game need? A deck? Two
-        #   participants?
         self.player = Player()
         self.dealer = Dealer()
         
@@ -106,7 +122,11 @@ class TwentyOneGame:
         while True:
             self.play_one_game()
 
-            if self.player.balance == 0:
+            if self.player.is_broke():
+                print("You are broke! Game over!")
+                break
+            elif self.player.is_rich():
+                print(f"You've reached {Player.WINNING_BALANCE}. Congratulations!")
                 break
             
             if not self.play_again():
@@ -119,13 +139,13 @@ class TwentyOneGame:
         self.deck.shuffle_cards()
 
         # fresh hands each game
-        self.player.hand = []
-        self.dealer.hand = []
+        self.player.reset_hand()
+        self.dealer.reset_hand()
 
         # deal two cards to player and dealer
         for _ in range(2):
-            self.player.hand.append(self.deck.deal())
-            self.dealer.hand.append(self.deck.deal())
+            self.player.add_card(self.deck.deal())
+            self.dealer.add_card(self.deck.deal())
 
         # display player's hand including points
         self.player.display_cards()
